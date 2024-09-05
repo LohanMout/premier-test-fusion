@@ -18,6 +18,7 @@ public class gestionnaireInputs : MonoBehaviour
     Vector2 mouvementInputVecteur = Vector2.zero;
     Vector2 vueInputVecteur = Vector2.zero;
     bool ilSaute;
+    public bool pretARecommencer;
     gestionnaireCameraLocale gestionnaireCameraLocale;
 
     /*
@@ -59,6 +60,16 @@ public class gestionnaireInputs : MonoBehaviour
         //Saut
         if (Input.GetButtonDown("Jump"))
             ilSaute = true;
+
+        // Si la partie n'est pas en cours (donc terminée!) on écoute la toucher R. Quand la touche
+        // est enfoncée, on met la variable pretARecommencer à true.
+        if (!GameManager.partieEnCours)
+        {
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                pretARecommencer = true;
+            }
+        }
     }
 
     /*
@@ -80,6 +91,7 @@ public class gestionnaireInputs : MonoBehaviour
         donneesInputReseau.vecteurDevant = gestionnaireCameraLocale.gameObject.transform.forward;
         donneesInputReseau.saute = ilSaute;
         ilSaute = false;
+        donneesInputReseau.pretARejouer = pretARecommencer;
         //3.
         return donneesInputReseau;
     }

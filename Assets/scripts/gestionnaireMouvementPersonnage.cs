@@ -47,21 +47,37 @@ public class gestionnaireMouvementPersonnage : NetworkBehaviour
     {
         // 1.
         GetInput(out donneesInputReseau donneesInputReseau);
+        if (GameManager.partieEnCours)
+        {
+            //2.
+            transform.forward = donneesInputReseau.vecteurDevant;
 
-        //2.
-        transform.forward = donneesInputReseau.vecteurDevant;
-        //3.
-        Quaternion rotation = transform.rotation;
-        rotation.eulerAngles = new Vector3(0, rotation.eulerAngles.y, 0);
-        transform.rotation = rotation;
+            //3.
+            Quaternion rotation = transform.rotation;
+            rotation.eulerAngles = new Vector3(0, rotation.eulerAngles.y, 0);
+            transform.rotation = rotation;
 
-        //4.
-        Vector3 directionMouvement = transform.forward * donneesInputReseau.mouvementInput.y + transform.right * donneesInputReseau.mouvementInput.x;
-        directionMouvement.Normalize();
-        networkCharacterController.Move(directionMouvement);
+            //4.
+            Vector3 directionMouvement = transform.forward * donneesInputReseau.mouvementInput.y + transform.right * donneesInputReseau.mouvementInput.x;
+            directionMouvement.Normalize();
+            networkCharacterController.Move(directionMouvement);
 
-        //5.saut, important de le faire après le déplacement
-        if (donneesInputReseau.saute) networkCharacterController.Jump();
+            //5.saut, important de le faire après le déplacement
+            if (donneesInputReseau.saute) networkCharacterController.Jump();
+        }
+        else
+        {
+            // On vérifie si le joueur a appuyé sur R (pret à rejouer). Si oui, on
+            // appelle la fonction JoueurPretReprise() du GameMangager en passant le component
+            // JoueurReseau du joueur qui est prêt. On remet également la variable pretARejouer
+            // à false.
+            if (donneesInputReseau.pretARejouer)
+            {
+                GameManager.instance.JoueurPretReprise(GetComponent<joueurReseau>());
+                donneesInputReseau.pretARejouer = false;
+            }
+        }
+
     }
 }
 

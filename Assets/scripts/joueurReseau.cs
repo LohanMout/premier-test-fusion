@@ -25,6 +25,12 @@ public class joueurReseau : NetworkBehaviour, IPlayerLeft //1.
     [Networked, OnChangedRender(nameof(OnChangementPointage))] public int nbBoulesRouges { get; set; }
     //Variable réseau (Networked) contenant le nom du joueur (sera synchronisée)
     [Networked] public string monNom { get; set; }
+
+    // Variable est mise à true lorsque tous les joueurs sont prêts à reprendre une nouvelle partie
+    // Il s'agit d'une variable synchronisée sur toues les clients. Lorsqu'un changement est détecté
+    // la fonctionne OnNouvellePartie() sera exécutée.
+    [Networked, OnChangedRender(nameof(OnNouvellePartie))] public bool recommence { get; set; }
+
     // Variable pour mémoriser la zone de texte au dessus de la tête du joueur et qui afficher le pointage
     // Cette variable doit être définie dans l'inspecteur de Unity
     public TextMeshProUGUI affichagePointageJoueur;
@@ -93,6 +99,14 @@ public class joueurReseau : NetworkBehaviour, IPlayerLeft //1.
     public void OnChangementPointage()
     {
         affichagePointageJoueur.text = $"{monNom}:{nbBoulesRouges.ToString()}";
+
+        // On vérifie si le nombre de boules rouge == l'objectif de points à atteindre
+        // Si oui, on appelle la fonction FinPartie en passant le nom du joueur gagnant.
+        // Cette fonction sera appelée dans le script du gagnant, sur tous les clients connectés
+        if (nbBoulesRouges >= GameManager.instance.objectifPoints)
+        {
+            GameManager.instance.FinPartie(monNom);
+        }
     }
 
     /* Fonction RPC (RemoteProcedureCall) déclenché par un joueur local qui permet la mise à jour du nom du joueur
@@ -110,6 +124,35 @@ public class joueurReseau : NetworkBehaviour, IPlayerLeft //1.
         monNom = leNom;
         //2.
         affichagePointageJoueur.text = $"{monNom}:{nbBoulesRouges.ToString()}";
+    }
+
+    /* Fonction appelée par le GameManager lorsque tous les joueurs sont prêts et qu'il faut relancer
+   une nouvelle partie.
+  */
+    public void Recommence()
+    {
+        recommence = true;
+    }
+
+    /* Fonction appelée lorsque la variable réseau recommence = true.
+    1. Si c'est le joueur local (hasInputAuthority), on désactive les panneux de victoire et d'attente
+    2. Si la variable recommence est bien égale à true, on remet différentes variales à leur valeur
+    de base, c'est-à-dire celle qu'elles doivent avoir en début de partie, comme le nbBoulesRouges = 0;
+   */
+    public void OnNouvellePartie()
+    {
+        if (Object.HasInputAuthority)
+        {
+            GameManager.instance.refPanelAttente.SetActive(false);
+            GameManager.instance.refPanelGagnant.SetActive(false);
+        }
+        if (recommence)
+        {
+            GetComponent<gestionnaireInputs>().pretARecommencer = false;
+            nbBoulesRouges = 0;
+            GameManager.partieEnCours = true;
+            recommence = false;
+        }
     }
 }
 

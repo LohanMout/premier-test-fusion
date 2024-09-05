@@ -19,4 +19,7 @@ public struct donneesInputReseau : INetworkInput
     public Vector2 mouvementInput;
     public Vector3 vecteurDevant;
     public NetworkBool saute;
+    //Varialbe NetworkBool qui permet de savoir si un joueur est prêt à recommencer. La variable
+    // sera changée dans un autre script, quand le joueur appuiera sur la touche "R".
+    public NetworkBool pretARejouer;
 }
