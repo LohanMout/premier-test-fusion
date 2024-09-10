@@ -24,4 +24,18 @@ public class SphereCollision : NetworkBehaviour
             Runner.Despawn(Object);//4.
         }
     }
+
+    /* Chaque boule vérifie sur le serveur uniquement (Runner.IsServer) si la partie est terminée. Si c'est
+   le cas, elle se despawn elle-même.
+   */
+    public override void FixedUpdateNetwork()
+    {
+        if (Runner.IsServer)
+        {
+            if (!GameManager.partieEnCours)
+            {
+                Runner.Despawn(Object);
+            }
+        }
+    }
 }

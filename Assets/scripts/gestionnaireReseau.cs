@@ -20,11 +20,33 @@ public class gestionnaireReseau : MonoBehaviour, INetworkRunnerCallbacks
     public Color[] couleurJoueurs;
     // Pour compteur le nombre de joueurs connectés
     public int nbJoueurs = 0;
+    public SphereCollision sphereCollision; 
+    // référence au prefab de la boule rouge
+    public bool spheresDejaSpawn; 
+    // Permet de savoir les boules ont déjà été créées.
 
     void Start()
     {
         // Création d'une partie dès le départ
         //CreationPartie(GameMode.AutoHostOrClient);
+    }
+
+    /* Fonction exécuté sur le serveur seulement qui spawn le nombre de boules rouges déterminés au lancement
+   d'une nouvelle partie.
+   */
+
+
+    public void CreationBouleRouge()
+    {
+        if (_runner.IsServer && !spheresDejaSpawn)
+        {
+            GameManager.partieEnCours = true;
+            for (int i = 0; i < GameManager.instance.nbBoulesRougesDepart; i++)
+            {
+                _runner.Spawn(sphereCollision, utilitaires.GetPositionSpawnAleatoire(), Quaternion.identity);
+            }
+            spheresDejaSpawn = true;
+        }
     }
 
     // Fonction asynchrone pour démarrer Fusion et créer une partie
@@ -129,8 +151,7 @@ public class gestionnaireReseau : MonoBehaviour, INetworkRunnerCallbacks
             Debug.Log("Un joueur s'est connecté comme serveur. Spawn d'un joueur");
             /*On garde la référence au nouveau joueur créé par le serveur. La variable locale
              créée est de type JoueurReseau (nom du script qui contient la fonction Spawned()*/
-            joueurReseau leNouveuJoueur = _runner.Spawn(joueurPrefab, utilitaires.GetPositionSpawnAleatoire(),
-                                            Quaternion.identity, player);
+            joueurReseau leNouveuJoueur = _runner.Spawn(joueurPrefab, utilitaires.GetPositionSpawnAleatoire(),Quaternion.identity, player);
             /*On change la variable maCouleur du nouveauJoueur et on augmente le nombre de joueurs connectés
             Comme j'ai seulement 10 couleurs de définies, je m'assure de ne pas dépasser la longueur de mon
             tableau*/

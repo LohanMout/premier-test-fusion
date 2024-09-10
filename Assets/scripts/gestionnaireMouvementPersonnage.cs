@@ -65,19 +65,6 @@ public class gestionnaireMouvementPersonnage : NetworkBehaviour
             //5.saut, important de le faire après le déplacement
             if (donneesInputReseau.saute) networkCharacterController.Jump();
         }
-        else
-        {
-            // On vérifie si le joueur a appuyé sur R (pret à rejouer). Si oui, on
-            // appelle la fonction JoueurPretReprise() du GameMangager en passant le component
-            // JoueurReseau du joueur qui est prêt. On remet également la variable pretARejouer
-            // à false.
-            if (donneesInputReseau.pretARejouer)
-            {
-                GameManager.instance.JoueurPretReprise(GetComponent<joueurReseau>());
-                donneesInputReseau.pretARejouer = false;
-            }
-        }
-
     }
 }
 

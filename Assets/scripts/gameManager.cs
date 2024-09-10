@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance; // Référence à l'instance du GameManager
     public int objectifPoints = 10; // Nombre de point pour finir la partie
+    public int nbBoulesRougesDepart = 20; // Nombre de boules rouges a spawner au début d'une partie.
     public static bool partieEnCours = true;  // Est que la partie est en cours (static)
     [SerializeField] gestionnaireReseau gestionnaireReseau; // Reférence au gestionnaire réseau
     public static string nomJoueurLocal; // Le nom du joueur local
@@ -15,7 +16,7 @@ public class GameManager : MonoBehaviour
     // il ajoutera lui même sa référence au dictionnaire du GameManager.
     // Liste static vide de type JoueurReseau qui servira à garder en mémoire tous les
     // joueurs connectés. Sera utilisé entre 2 parties pour gérer la reprise.
-    public static List<joueurReseau> lstJoueurReseau = new List<joueurReseau>();
+    //public static List<joueurReseau> lstJoueurReseau = new List<joueurReseau>();
 
     [Header("Éléments UI")]
     public GameObject refCanvasDepart; // Référence au canvas de départ
@@ -25,6 +26,7 @@ public class GameManager : MonoBehaviour
     public GameObject refPanelGagnant; // Référence au panel affichant le texte du gagnant.
     public TextMeshProUGUI refTxtGagnant; // Référence à la zone de texte pour afficher le nom du gagnant.
     public GameObject refPanelAttente; // Référence au panel affichant le d'attente entre deux partie.
+    public GameObject txtAttenteAutreJoueur; // Texte sous forme de bandeau rouge pour indiquer au joueur qu'il est en attente. À défénir dans l'inspecteur de Unity.
 
 
 
@@ -76,32 +78,46 @@ public class GameManager : MonoBehaviour
         partieEnCours = false;
         refPanelGagnant.SetActive(true);
         refTxtGagnant.text = nomGagnant;
-        foreach (joueurReseau leJoueur in joueursPointagesData.Keys)
-        {
-            lstJoueurReseau.Add(leJoueur);
-        }
-
+        gestionnaireReseau.spheresDejaSpawn = false;
     }
 
-    /* Fonction appelée par le GestionnaireMouvementPersonnage qui vérifie si la touche "R" a été
-   enfoncée pour reprendre une nouvelle partie. Cette fonction sera exécuté seulement sur le
-   serveur.
-   1. On retire de la liste lstJoueurReseau la référence au joueur qui est prêt à reprendre.
-   2. Si la liste lstJoueurReseau est rendu vide (== 0), c'est que tous les joueurs sont prêt
-   a reprendre. Si c'est le cas, on appelle la fonction Recommence présente dans le script
-   JoueurReseau. Tous les joueurs exécuteront cette fonction.
-   */
-    public void JoueurPretReprise(joueurReseau joueurReseau)
+    /* Fonction permettant d'afficher ou de masquer le texte d'attente d'un autre joueur (bandeau rouge) */
+    public void AfficheAttenteAutreJoueur(bool etat)
     {
-        lstJoueurReseau.Remove(joueurReseau);
+        txtAttenteAutreJoueur.SetActive(etat);
+    }
 
-        if (lstJoueurReseau.Count == 0)
+    /* Fonction appelée lors qu'il est temps d'instancier de nouvelles boules rouges en début de partie
+   On appelle simplement une autre fonction CreationBoulleRouge dans le script gestionnaireReseau.
+   */
+    public void NouvellesBoulesRouges()
+    {
+        gestionnaireReseau.CreationBouleRouge();
+    }
+
+    /* Fonction qui déclenchera une nouvelle partie si toutes les conditions sont réunis.
+   1. Désactivation des panneaux de fin de partie
+   2. On met la variable partieEnCours à true;
+   3. Variable unSeulJoueur : pour gérer le cas où un seul joueur serait resté connecté.
+   4. Appel de la fonction Recommence pour chaque JoueurReseau. Si le joueur est seul, cette fonction
+   renverra true, sinon false;
+   5. S'il y a plus d'un joueur, on appelle la fonction NouvellesBoulesRouges pour spawner des boules
+   */
+    public void DebutNouvellePartie()
+    {
+        //.1
+        refPanelAttente.SetActive(false);
+        refPanelGagnant.SetActive(false);
+        //2.
+        partieEnCours = true;
+        //3.
+        bool unSeulJoueur = false;
+        //4.
+        foreach (joueurReseau leJoueur in joueursPointagesData.Keys)
         {
-            foreach (joueurReseau leJoueur in joueursPointagesData.Keys)
-            {
-                leJoueur.Recommence();
-            }
+            unSeulJoueur = leJoueur.Recommence();
         }
+        if (!unSeulJoueur) NouvellesBoulesRouges();
     }
 }
 
