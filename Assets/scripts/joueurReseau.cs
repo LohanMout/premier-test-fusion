@@ -122,7 +122,6 @@ public class joueurReseau : NetworkBehaviour, IPlayerLeft, IDespawned //1.
         }
         else if (Runner.SessionInfo.PlayerCount > 1)
         {
-            print("devrait creer boules rouges");
             GameManager.instance.AfficheAttenteAutreJoueur(false);
             if (Runner.IsServer) GameManager.instance.NouvellesBoulesRouges();
         }
