@@ -77,6 +77,21 @@ public class gestionnaireReseau : MonoBehaviour, INetworkRunnerCallbacks
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
     }
+
+    /*Fonction appelé pendant le jeu, lorsqu'il est nécessaire de créer de nouvelles
+   boule rouges. Réception en paramètre du nombre de boules à créer.
+   */
+    public void AjoutBoulesRouges(int combien)
+    {
+        if (_runner.IsServer)
+        {
+            for (int i = 0; i < combien; i++)
+            {
+                _runner.Spawn(sphereCollision, utilitaires.GetPositionSpawnAleatoire(), Quaternion.identity);
+            }
+        }
+    }
+
     public void OnConnectedToServer(NetworkRunner runner)
     {
         

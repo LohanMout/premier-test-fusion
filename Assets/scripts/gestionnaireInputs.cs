@@ -19,6 +19,8 @@ public class gestionnaireInputs : MonoBehaviour
     Vector2 vueInputVecteur = Vector2.zero;
     bool ilSaute;
     public bool pretARecommencer;
+    bool ilTir = false; // Détection locale du clic de souris.
+    gestionnaireMouvementPersonnage gestionnaireMouvementPersonnage; // référence au script de mouvement
     gestionnaireCameraLocale gestionnaireCameraLocale;
 
     /*
@@ -27,6 +29,8 @@ public class gestionnaireInputs : MonoBehaviour
     void Awake()
     {
         gestionnaireCameraLocale = GetComponentInChildren<gestionnaireCameraLocale>();
+        gestionnaireMouvementPersonnage = GetComponent<gestionnaireMouvementPersonnage>();
+
     }
 
     /*
@@ -48,6 +52,9 @@ public class gestionnaireInputs : MonoBehaviour
      */
     void Update()
     {
+        // Optimisation : on exécute seulement le Update si le client contrôle ce joueur
+        if (!gestionnaireMouvementPersonnage.Object.HasInputAuthority)
+            return;
         // Déplacement
         mouvementInputVecteur.x = Input.GetAxis("Horizontal");
         mouvementInputVecteur.y = Input.GetAxis("Vertical");
@@ -60,6 +67,11 @@ public class gestionnaireInputs : MonoBehaviour
         //Saut
         if (Input.GetButtonDown("Jump"))
             ilSaute = true;
+
+        //Tir
+        if (Input.GetButtonDown("Fire1"))
+            ilTir = true;
+
 
         // Si la partie n'est pas en cours (donc terminée!) on écoute la toucher R. Quand la touche
         // est enfoncée, on met la variable pretARecommencer à true.
@@ -90,8 +102,13 @@ public class gestionnaireInputs : MonoBehaviour
         donneesInputReseau.mouvementInput = mouvementInputVecteur;
         donneesInputReseau.vecteurDevant = gestionnaireCameraLocale.gameObject.transform.forward;
         donneesInputReseau.saute = ilSaute;
+        donneesInputReseau.appuieBoutonTir = ilTir;
+
         ilSaute = false;
+        ilTir = false;
+
         donneesInputReseau.pretARejouer = pretARecommencer;
+
         //3.
         return donneesInputReseau;
     }

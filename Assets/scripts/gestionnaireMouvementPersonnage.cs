@@ -17,6 +17,12 @@ public class gestionnaireMouvementPersonnage : NetworkBehaviour
 {
     Camera camLocale;
     NetworkCharacterController networkCharacterController;
+
+    // variable pour garder une référence au script gestionnairePointsDeVie;
+    GestionnairePointsDeVie gestionnairePointsDeVie;
+    // variable pour savoir si un Respawn du joueur est demandé
+    bool respawnDemande = false;
+
     /*
         * Avant le Start(), on mémorise la référence au component networkCharacterController du joueur
         * On garde en mémoire la caméra du joueur courant (GetComponentInChildren)
@@ -25,8 +31,22 @@ public class gestionnaireMouvementPersonnage : NetworkBehaviour
     {
         networkCharacterController = GetComponent<NetworkCharacterController>();
         camLocale = GetComponentInChildren<Camera>();
+        gestionnairePointsDeVie = GetComponent<GestionnairePointsDeVie>();
     }
 
+    /* Fonction publique appelée sur serveur uniquement, par la coroutine RessurectionServeur_CO() du
+     * script GestionnairePointsDeVie. L'origine de la séquence d'événements début dans le script
+     * GestionnairesArmes lorsq'un joueur es touché par un tir :
+     * - GestionnairesArmes : Appelle la fonction PersoEstTouche() du script GestionnairePointDeVie;
+     * Notez que cet appel est fait uniquement sur l'hôte (le serveur) et ne s'exécute pas sur les clients
+     * - GestionnairesPointsDeVie : Appel la coroutine RessurectionServeur_CO() dans son propre script
+     * - Coroutine RessurectionServeur_CO() : Appel la fonction DemandeRespawn 
+     *   du script GestionnaireMouvementPersonnage
+     */
+    public void DemandeRespawn()
+    {
+        respawnDemande = true;
+    }
 
     /*
      * Fonction récursive réseau pour la simulation. À utiliser pour ce qui doit être synchronisé entre
@@ -45,6 +65,16 @@ public class gestionnaireMouvementPersonnage : NetworkBehaviour
      */
     public override void FixedUpdateNetwork()
     {
+        //Si on est sur le serveur et qu'un respawn a été demandé, on appele la fonction Respawn()
+        if (Object.HasStateAuthority && respawnDemande)
+        {
+            Respawn();
+            return;
+        }
+        // Si le joueur est mort, on sort du script immédiatement
+        if (gestionnairePointsDeVie.estMort)
+            return;
+
         // 1.
         GetInput(out donneesInputReseau donneesInputReseau);
         if (GameManager.partieEnCours)
@@ -65,6 +95,27 @@ public class gestionnaireMouvementPersonnage : NetworkBehaviour
             //5.saut, important de le faire après le déplacement
             if (donneesInputReseau.saute) networkCharacterController.Jump();
         }
+    }
+
+    /* Fonction qui appelle la fonction TeleportToPosition du script networkCharacterControllerPrototypeV2
+    * 1. Téléporte à un point aléatoire et modifie la variable respawnDemande à false
+    * 2. Appelle la fonction Respawn() du script gestionnairePointsDeVie
+    */
+    void Respawn()
+    {
+        //1.
+        ActivationCharacterController(true);
+        networkCharacterController.Teleport(utilitaires.GetPositionSpawnAleatoire());
+        respawnDemande = false;
+        //2.
+        gestionnairePointsDeVie.Respawn();
+    }
+
+    /* Fonction publique qui active ou désactive le script networkCharacterControllerPrototypeV2
+     */
+    public void ActivationCharacterController(bool estActif)
+    {
+        networkCharacterController.enabled = estActif;
     }
 }
 

@@ -22,4 +22,7 @@ public struct donneesInputReseau : INetworkInput
     //Varialbe NetworkBool qui permet de savoir si un joueur est prêt à recommencer. La variable
     // sera changée dans un autre script, quand le joueur appuiera sur la touche "R".
     public NetworkBool pretARejouer;
+    /* pour le serveur : permet de savoir si le joueur a appuyé sur le bouton de tir
+    la variable sera définie dans le script GestionnaireInputs*/
+    public NetworkBool appuieBoutonTir;
 }
