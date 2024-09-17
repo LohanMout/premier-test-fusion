@@ -71,9 +71,9 @@ public class gestionnaireReseau : MonoBehaviour, INetworkRunnerCallbacks
         await _runner.StartGame(new StartGameArgs()
         {
             GameMode = mode,
-            SessionName = "Chambre test",
+            SessionName = GameManager.instance.nomDeLapartie,
             Scene = SceneRef.FromIndex(IndexSceneJeu),
-            PlayerCount = 10, //ici, on limite à 10 joueurs
+            PlayerCount = GameManager.instance.nombreDeJoueurMax,
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
     }
@@ -211,18 +211,19 @@ public class gestionnaireReseau : MonoBehaviour, INetworkRunnerCallbacks
         
     }
 
+    /*
+    * Fonction appelée lorsqu'une connexion réseau est refusée ou lorsqu'un client perd
+    * la connexion suite à une erreur réseau. Le paramètre ShutdownReason est une énumération (enum)
+    * contenant différentes causes possibles.
+    * Ici, lorsque la connexion est refusée car le nombre maximal de joueurs est atteint, on appelle la
+    * fonction NavigationPanel du GameManager en passant la valeur true en parmètre.
+    */
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
     {
-        /*
-         * Fonction appelée lorsqu'une connexion réseau est refusée ou lorsqu'un client perd
-        * la connexion suite à une erreur réseau. Le paramètre ShutdownReason est une énumération (enum)
-        * contenant différentes causes possibles.
-         */
         if (shutdownReason == ShutdownReason.GameIsFull)
         {
-            Debug.Log("Le maximum de joueur est atteint. Réessayer plus tard.");
+            GameManager.instance.NavigationPanel(true);
         }
-
     }
 
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message)

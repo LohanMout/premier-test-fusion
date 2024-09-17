@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 using TMPro;
+using System;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance; // Référence à l'instance du GameManager
@@ -28,6 +29,22 @@ public class GameManager : MonoBehaviour
     public GameObject refPanelAttente; // Référence au panel affichant le d'attente entre deux partie.
     public GameObject txtAttenteAutreJoueur; // Texte sous forme de bandeau rouge pour indiquer au joueur qu'il est en attente. À défénir dans l'inspecteur de Unity.
 
+    public string nomDeLapartie; // Le nom de la partie entrée par le joueur
+    public int nombreDeJoueurMax; // Le nombre maximum de joueurs décidé par le joueur qui crée la partie
+
+    public TextMeshProUGUI refTextNomPartieJoindre; //Texte entré dans le champs pour rejoindre une partie
+    public TextMeshProUGUI refTextNomPartieNouvelle; // Texte entré dans le champs pour créer une nouvelle partie
+
+    // Attention ici, bogue avec TextMesh Pro. Le type TextMeshProUGUI ne permet pas d'utiliser
+    //la commande TryParse(). Il faut absolument utiliser le type TMP_InputField
+    public TMP_InputField refTextNbJoueursNouvelle; // Référence au nombre de joueurs maximum entré par l'utilisateur
+    public GameObject panelNom; // Référence au panel qui demande le nom du joueur
+    public GameObject panelChoix; // Référence au panel qui permet au joueur de choisir de créer ou joindre une partie
+    public GameObject panelConnexionRefusee; // Référence au panel qui s'affiche si la connexion a une partie est refusée
+
+    // Référence au Prefab GestionnaireReseau. Sera utilisé lorsqu'une connexion a une partie est refusée parce que le nombre
+    // de joueur max a été atteint. Dans ce cas, Fusion supprimer le GestionnaireReseau original. Il faudra donc en créer un autre...
+    public GameObject gestionnaireReseauSource;
 
 
     // Au départ, on définit la variable "instance" qui permettra au autre script de communiquer avec l'instance du GameManager.
@@ -57,18 +74,39 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /* Fonction appelée par le bouton pour commencer une partie
-    1. Récupération du nom du joueur (string)
-    2. Appel de la fonction CreationPartie pour établir la connexion au serveur (dans script gestionnaireReseau)
-    3. Désactivation du canvas de départ et activation du canvas de jeu
-    */
-    public void OnRejoindrePartie()
+    /* Fonction appelée par les boutons pour joindre et créer une nouvelle partie. La paramètre reçu déterminera si une
+   nouvelle partie est créé (true) ou si on tente de rejoindre une partie en cours (false)
+   1. Récupération du nom du joueur (string)
+   2. Récupération du nom de la partie à créer ou à rejoindre
+   3. Récupération du nombre de joueurs maximum entré. Pour convertir un string en int, on utilise la commande TryParse
+   4. Appel de la fonction CreationPartie pour établir la connexion au serveur (dans script gestionnaireReseau)
+   5. Désactivation du canvas de départ et activation du canvas de jeu
+   */
+    public void OnRejoindrePartie(bool nouvellePartie)
     {
         //.1
         nomJoueurLocal = refTxtNomJoueur.text;
         //.2
-        gestionnaireReseau.CreationPartie(GameMode.AutoHostOrClient);
+        if (nouvellePartie)
+        {
+            nomDeLapartie = refTextNomPartieNouvelle.text;
+        }
+        else
+        {
+            nomDeLapartie = refTextNomPartieJoindre.text;
+        }
         //.3
+        if (refTextNbJoueursNouvelle.text != "")
+        {
+            int leNombre;
+            if (int.TryParse(refTextNbJoueursNouvelle.text, out leNombre))
+            {
+                GameManager.instance.nombreDeJoueurMax = leNombre;
+            }
+        }
+        //.4
+        gestionnaireReseau.CreationPartie(GameMode.AutoHostOrClient);
+        //.5
         refCanvasDepart.SetActive(false);
         refCanvasJeu.SetActive(true);
     }
@@ -126,6 +164,31 @@ public class GameManager : MonoBehaviour
     public void AjoutBoulesRouges(int combien)
     {
         gestionnaireReseau.AjoutBoulesRouges(combien);
+    }
+
+    /* Fonction appelée par le bouton "clic ici pour commencer" lorsque le joueur entre son nom. Dans ce cas,
+   elle redevra "false" comme paramètre.
+   Cette fonction est aussi appelée lorsqu'une connexion à une partie est refusée (max de joueurs atteints). Elle recevra
+   alors true comme paramètre
+   - Activation du panneau du choix de partie (rejoindre ou créer nouvelle)
+   - Désactivation du panneau de saisie de nom du joueur
+   - Activation du canvas de départ et désactivation du canvas de jeu
+   - Dans le cas ou cette fonction est appelé suite à un refus de connexion, on créer un nouvel objet gestionnaire de réseau et on
+   mémorise sa référence. On affiche également le pannel qui indique au joueur la raison du refus de connexion.
+   */
+    public void NavigationPanel(bool nouveauGestionnaireReseau)
+    {
+        panelChoix.SetActive(true);
+        panelNom.SetActive(false);
+        refCanvasDepart.SetActive(true);
+        refCanvasJeu.SetActive(false);
+
+        if (nouveauGestionnaireReseau)
+        {
+            GameObject nouveauGestionnaire = Instantiate(gestionnaireReseauSource);
+            gestionnaireReseau = nouveauGestionnaire.GetComponent<gestionnaireReseau>();
+            panelConnexionRefusee.SetActive(true);
+        }
     }
 }
 
